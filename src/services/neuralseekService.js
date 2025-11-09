@@ -31,6 +31,37 @@ const cleanJSON = (str) => {
   return str.replace(/```json\n?|\n?```/g, '').trim();
 };
 
+const toArray = (value) => {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string' && value.trim()) return [value.trim()];
+  if (value && typeof value === 'object') return Object.values(value);
+  return [];
+};
+
+const normalizeCallData = (data = {}) => {
+  const normalized = { ...data };
+
+  normalized.summary = data.summary || data.summaryText || '';
+  normalized.key_points = toArray(data.key_points ?? data.keyPoints);
+  normalized.action_items = toArray(data.action_items ?? data.actionItems);
+  normalized.next_steps = toArray(data.next_steps ?? data.nextSteps);
+
+  return normalized;
+};
+
+const extractFollowUpEmail = (data = {}, fallbackRecipient = 'Contact') => {
+  const email = data.followUpEmail || data.follow_up_email || data.followupEmail;
+  if (email && (email.subject || email.body)) {
+    return {
+      subject: email.subject || `Follow-up from our discussion`,
+      body: email.body || ''
+    };
+  }
+
+  // If no structured email exists, return null so caller can decide how to handle
+  return null;
+};
+
 export async function extractCallData(transcript, fileName) {
   try {
     const prompt = `Extract the following information from this call transcript and return as JSON:
@@ -44,7 +75,7 @@ export async function extractCallData(transcript, fileName) {
     Return only valid JSON.`;
 
     const response = await axiosInstance.post('', {
-      
+      ntl: prompt,
       api_key: API_KEY,
       agent: 'Main',
       params: [
@@ -63,7 +94,7 @@ export async function extractCallData(transcript, fileName) {
     return {
       success: true,
       data: {
-        ...data,
+        ...normalizeCallData(data),
         confidence: 0.85
       }
     };
@@ -75,10 +106,12 @@ export async function extractCallData(transcript, fileName) {
 
 export async function generateEmail(callData, recipientName = 'Contact') {
   try {
+    const normalizedCallData = normalizeCallData(callData);
+
     const prompt = `Generate a professional follow-up email based on this call data:
-    Summary: ${callData.summary}
-    Key Points: ${callData.key_points.join(', ')}
-    Action Items: ${callData.action_items.join(', ')}
+    Summary: ${normalizedCallData.summary}
+    Key Points: ${normalizedCallData.key_points.join(', ')}
+    Action Items: ${normalizedCallData.action_items.join(', ')}
 
     Create an email with:
     1. subject: A professional subject line
@@ -87,8 +120,9 @@ export async function generateEmail(callData, recipientName = 'Contact') {
     Return as JSON with "subject" and "body" fields.`;
 
     const response = await axiosInstance.post('', {
-      question: prompt,
-      api_key: API_KEY
+      ntl: prompt,
+      api_key: API_KEY,
+      agent: 'Main'
     });
 
     const jsonStr = cleanJSON(response.data.answer);
@@ -136,16 +170,22 @@ export async function uploadTranscriptFile(file) {
 export async function processTranscript(transcript, fileName, options = {}) {
   try {
     const callExtraction = await extractCallData(transcript, fileName);
-    const emailGeneration = await generateEmail(callExtraction.data, options.recipientName);
+    const normalizedCallData = normalizeCallData(callExtraction.data);
+    let emailDraft = extractFollowUpEmail(callExtraction.data, options.recipientName);
+
+    if (!emailDraft) {
+      const emailGeneration = await generateEmail(normalizedCallData, options.recipientName);
+      emailDraft = emailGeneration.email;
+    }
 
     return {
       json_data: {
         call_id: `call_${Date.now()}`,
         timestamp: new Date().toISOString(),
         recipients: options.recipients || ['team@company.com'],
-        ...callExtraction.data
+        ...normalizedCallData
       },
-      email_draft: emailGeneration.email
+      email_draft: emailDraft
     };
   } catch (error) {
     throw error;
