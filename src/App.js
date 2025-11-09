@@ -3,7 +3,7 @@ import './App.css';
 import FileUpload from './components/FileUpload';
 import ProcessingStatus from './components/ProcessingStatus';
 import ResultsDisplay from './components/ResultsDisplay';
-import * as transcriptService from './services/mockService';
+import * as transcriptService from './services/neuralseekService';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('app');
@@ -11,11 +11,19 @@ function App() {
   const [processing, setProcessing] = useState(false);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
+  const [fileName, setFileName] = useState('');
 
-  const handleFileUpload = (content) => {
-    setTranscript(content);
-    setError(null);
-  };
+const handleFileUpload = async (file) => {
+  try {
+    const result = await transcriptService.uploadTranscriptFile(file);
+    console.log('Upload successful:', result);
+    console.log(result.data.fn);
+    setFileName(result.data.fn);
+    // Use result.fileId for further processing
+  } catch (error) {
+    console.error('Upload failed:', error.message);
+  }
+};
 
   const handleProcess = async () => {
     if (!transcript.trim()) {
@@ -28,7 +36,7 @@ function App() {
     setCurrentPage('processing');
 
     try {
-      const processedData = await transcriptService.processTranscript(transcript);
+      const processedData = await transcriptService.processTranscript(transcript, fileName);
       setResults(processedData);
       setCurrentPage('results');
     } catch (err) {
@@ -58,7 +66,7 @@ function App() {
             {error && <div className="error-banner">{error}</div>}
             
             <div className="upload-section">
-              <FileUpload onFileUpload={handleFileUpload} />
+              <FileUpload onFileUpload={handleFileUpload} useDirectUpload setTranscript={setTranscript} />
             </div>
 
             {transcript && (

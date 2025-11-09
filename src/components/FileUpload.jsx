@@ -2,19 +2,35 @@ import React from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload } from 'lucide-react';
 
-export default function FileUpload({ onFileUpload }) {
+export default function FileUpload({ onFileUpload, setTranscript, useDirectUpload = false }) {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
-      'text/plain': ['.txt']
+      'text/plain': ['.txt'],
+      'audio/*': ['.mp3', '.wav', '.m4a', '.ogg'],
+      'video/*': ['.mp4', '.webm']
     },
     onDrop: (acceptedFiles) => {
       if (acceptedFiles.length > 0) {
         const file = acceptedFiles[0];
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          onFileUpload(e.target.result);
-        };
-        reader.readAsText(file);
+        
+        if (useDirectUpload) {
+          // For direct multipart/form-data upload to /explore/upload
+          // onFileUpload(file, 'file');
+        
+          // Read file as text asynchronously
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const fileContent = e.target.result;
+            setTranscript(fileContent);
+            onFileUpload(file);
+            console.log('File content loaded:', fileContent);
+
+          };
+          reader.onerror = () => {
+            console.error('Error reading file');
+          };
+          reader.readAsText(file);
+        }
       }
     }
   });
@@ -31,9 +47,10 @@ export default function FileUpload({ onFileUpload }) {
       <input {...getInputProps()} />
       <Upload className={`h-32 w-32 mb-4 text-[#F3B82B]`} />
       <p className="text-lg font-medium text-[#F3B82B]">
-        {isDragActive ? 'Drop the file here' : 'Drag & drop a .txt file here'}
+        {isDragActive ? 'Drop the file here' : 'Drag & drop a file here'}
       </p>
       <p className="text-sm text-[#F3B82B] opacity-80">or click to select a file</p>
+      <p className="text-xs text-[#F3B82B] opacity-60 mt-2">Supported: .txt, .mp3, .wav, .mp4, etc.</p>
     </div>
   );
 }
