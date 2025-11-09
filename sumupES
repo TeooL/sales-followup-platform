@@ -1,0 +1,15 @@
+{{ doc  | name: "100_m_offershow_to_make_offers_so_good_people_feelstupid--_alexhormozy--_pt2021--_acquisition_compublishing--9781737475705--da9eb4951114175a5e429e89b9488c20--_annaâs_archive.pdf" }}
+{{ elastic  | operation: "create index" | payload: "{
+  'index': 'sumup'
+}" }}
+{{ pdfLoop  | file: "fanatical_prospectingthe_ultimate_guide_to_openingsales--_jeb_blount_blountjeb--2015--wiley--4ff11abca489d35c775ccc2ace7b1dc6--_annaâsarchive.pdf" | pagesPerLoop: "4" }}
+<< name: pdfLoopText0, prompt: false >>=>{{ summarize  | length: "5000" }}=>{{ jsonEscape  }}=>{{ variable  | name: "summarizedText" }}
+{{ elastic  | operation: "index" | payload: "{
+  'index': 'sumup',
+  'document': {
+    'name': "fanatical<< name: pdfLoopPage0, prompt: false >>",
+    'text': "<< name: summarizedText, prompt: false >>"
+  }
+}" }}
+{{ endLoop  | sleep: "0" }}
+{{ email  | host: "" | port: "" | user: "" | pass: "" | from: "" | to: "" | subject: "" | message: "" }}
