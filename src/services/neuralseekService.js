@@ -28,7 +28,72 @@ console.log('NeuralSeek API Base URL:', API_BASE_URL);
 console.log('API Key configured:', !!API_KEY);
 
 const cleanJSON = (str) => {
-  return str.replace(/```json\n?|\n?```/g, '').trim();
+  return (str || '').replace(/```json\n?|\n?```/g, '').trim();
+};
+
+const toArray = (value) => {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string' && value.trim()) return [value.trim()];
+  if (value && typeof value === 'object') return Object.values(value);
+  return [];
+};
+
+const formatListItem = (item) => {
+  if (item === null || item === undefined) return null;
+  if (typeof item === 'string') return item.trim();
+  if (typeof item === 'number' || typeof item === 'boolean') return String(item);
+  if (typeof item === 'object') {
+    return (
+      item.point ||
+      item.action ||
+      item.step ||
+      item.description ||
+      item.text ||
+      item.value ||
+      Object.values(item).join(': ')
+    );
+  }
+  return null;
+};
+
+const normalizeList = (list) =>
+  toArray(list)
+    .map(formatListItem)
+    .filter((item) => !!item);
+
+const parseCallDataPayload = (payload) => {
+  if (!payload) return {};
+  if (typeof payload === 'string') {
+    try {
+      return JSON.parse(cleanJSON(payload));
+    } catch (error) {
+      console.warn('Failed to parse call data payload:', error);
+      return {};
+    }
+  }
+  return payload;
+};
+
+const normalizeCallData = (data = {}) => {
+  const normalized = { ...data };
+
+  normalized.summary = data.summary || data.summaryText || '';
+  normalized.key_points = normalizeList(data.key_points ?? data.keyPoints);
+  normalized.action_items = normalizeList(data.action_items ?? data.actionItems);
+  normalized.next_steps = normalizeList(data.next_steps ?? data.nextSteps);
+
+  return normalized;
+};
+
+const extractFollowUpEmail = (data = {}) => {
+  const email = data.followUpEmail || data.follow_up_email || data.followupEmail;
+  if (email && (email.subject || email.body)) {
+    return {
+      subject: email.subject || 'Follow-up from our discussion',
+      body: email.body || ''
+    };
+  }
+  return null;
 };
 
 export async function extractCallData(transcript, fileName) {
@@ -44,7 +109,8 @@ export async function extractCallData(transcript, fileName) {
     Return only valid JSON.`;
 
     const response = await axiosInstance.post('', {
-      
+      question: prompt,
+      ntl: prompt,
       api_key: API_KEY,
       agent: 'Main',
       params: [
@@ -55,17 +121,17 @@ export async function extractCallData(transcript, fileName) {
       ]
     });
 
-    const jsonStr = cleanJSON(response.data.answer);
-    const data = JSON.parse(jsonStr);
+    const parsedData = parseCallDataPayload(response.data.answer);
 
-    console.log(data);
+    console.log(parsedData);
 
     return {
       success: true,
       data: {
-        ...data,
-        confidence: 0.85
-      }
+        ...normalizeCallData(parsedData),
+        confidence: parsedData.confidence ?? 0.85
+      },
+      rawData: parsedData
     };
   } catch (error) {
     console.error('Extract call data error:', error.response?.data || error.message);
@@ -75,10 +141,12 @@ export async function extractCallData(transcript, fileName) {
 
 export async function generateEmail(callData, recipientName = 'Contact') {
   try {
+    const normalizedCallData = normalizeCallData(callData);
+
     const prompt = `Generate a professional follow-up email based on this call data:
-    Summary: ${callData.summary}
-    Key Points: ${callData.key_points.join(', ')}
-    Action Items: ${callData.action_items.join(', ')}
+    Summary: ${normalizedCallData.summary}
+    Key Points: ${normalizedCallData.key_points.join(', ')}
+    Action Items: ${normalizedCallData.action_items.join(', ')}
 
     Create an email with:
     1. subject: A professional subject line
@@ -88,7 +156,9 @@ export async function generateEmail(callData, recipientName = 'Contact') {
 
     const response = await axiosInstance.post('', {
       question: prompt,
-      api_key: API_KEY
+      ntl: prompt,
+      api_key: API_KEY,
+      agent: 'Main'
     });
 
     const jsonStr = cleanJSON(response.data.answer);
@@ -136,16 +206,23 @@ export async function uploadTranscriptFile(file) {
 export async function processTranscript(transcript, fileName, options = {}) {
   try {
     const callExtraction = await extractCallData(transcript, fileName);
-    const emailGeneration = await generateEmail(callExtraction.data, options.recipientName);
+    const normalizedCallData = callExtraction.data;
+    const rawCallData = callExtraction.rawData || {};
+
+    let emailDraft = extractFollowUpEmail(rawCallData);
+    if (!emailDraft) {
+      const emailGeneration = await generateEmail(normalizedCallData, options.recipientName);
+      emailDraft = emailGeneration.email;
+    }
 
     return {
       json_data: {
         call_id: `call_${Date.now()}`,
         timestamp: new Date().toISOString(),
         recipients: options.recipients || ['team@company.com'],
-        ...callExtraction.data
+        ...normalizedCallData
       },
-      email_draft: emailGeneration.email
+      email_draft: emailDraft
     };
   } catch (error) {
     throw error;

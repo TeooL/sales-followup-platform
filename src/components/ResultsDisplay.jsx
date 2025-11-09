@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Copy, Download, RefreshCw } from 'lucide-react';
-import JSONViewer from './JSONViewer';
 import EmailPreview from './EmailPreview';
 
 export default function ResultsDisplay({ results, onReset }) {
   const [copiedJson, setCopiedJson] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
+  const jsonData = results?.json_data || {};
+  const summary = jsonData.summary || jsonData.summaryText || 'No summary available yet.';
+  const hasEmailDraft = !!(results?.email_draft?.body || results?.email_draft?.subject);
 
   const copyToClipboard = (text, type) => {
     navigator.clipboard.writeText(text);
@@ -44,11 +46,16 @@ export default function ResultsDisplay({ results, onReset }) {
         </div>
 
         <div className="mb-8">
-          <h3 className="section-title">Call Analysis (JSON)</h3>
-          <JSONViewer data={results.json_data} />
-          <div className="flex gap-2 mt-4">
+          <h3 className="section-title">Call Summary</h3>
+          <div className="transcript-preview whitespace-pre-line">{summary}</div>
+        </div>
+
+        <div className="mb-8">
+          <h3 className="section-title">Call Analysis Data</h3>
+          <p className="text-sm text-gray-500 mb-3">Export or copy the structured call data for record keeping.</p>
+          <div className="flex gap-2">
             <button
-              onClick={() => copyToClipboard(JSON.stringify(results.json_data, null, 2), 'json')}
+              onClick={() => copyToClipboard(JSON.stringify(jsonData, null, 2), 'json')}
               className="btn btn-secondary flex items-center justify-center gap-2"
             >
               <Copy size={20} />
@@ -67,13 +74,15 @@ export default function ResultsDisplay({ results, onReset }) {
         <div className="mb-8">
           <h3 className="section-title">Follow-up Email</h3>
           <EmailPreview email={results.email_draft} />
-          <button
-            onClick={() => copyToClipboard(results.email_draft.body, 'email')}
-            className="btn btn-secondary flex items-center justify-center gap-2 mt-4"
-          >
-            <Copy size={20} />
-            {copiedEmail ? 'Copied!' : 'Copy Email'}
-          </button>
+          {hasEmailDraft && (
+            <button
+              onClick={() => copyToClipboard(results.email_draft.body, 'email')}
+              className="btn btn-secondary flex items-center justify-center gap-2 mt-4"
+            >
+              <Copy size={20} />
+              {copiedEmail ? 'Copied!' : 'Copy Email'}
+            </button>
+          )}
         </div>
 
         <button
