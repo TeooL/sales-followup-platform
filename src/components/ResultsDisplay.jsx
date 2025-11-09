@@ -32,15 +32,15 @@ export default function ResultsDisplay({ results, onReset }) {
   };
 
   return (
-    <div className="app-page">
+    <div className="app-page-inner">
       <div className="app-header">
         <h1>Processing Complete</h1>
         <p>Your transcript has been successfully analyzed</p>
       </div>
 
       <div className="main-card">
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-          <p className="text-green-800 font-medium">✓ Transcript processed successfully</p>
+        <div className="rounded-lg p-4 mb-6" style={{ backgroundColor: 'rgba(33, 36, 238, 0.81)', border: '2px solid #F3B82B' }}>
+          <p style={{ color: '#F3B82B' }} className="font-medium">✓ Transcript processed successfully</p>
         </div>
 
         <div className="mb-8">

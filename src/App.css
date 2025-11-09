@@ -1,6 +1,16 @@
 .app-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1A8FC9 0%, #0D5A8F 100%);
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.app-page-inner {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0D5A8F 0%, #1A8FC9 100%);
+  border-radius: 12px;
   padding: 40px 20px;
   display: flex;
   flex-direction: column;
@@ -19,7 +29,7 @@
   font-size: 2.5rem;
   font-weight: bold;
   margin: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #F3B82B 0%, #D4921F 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -33,7 +43,7 @@
 }
 
 .main-card {
-  background: white;
+  background:#F3B82B;
   border-radius: 12px;
   padding: 40px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
@@ -53,11 +63,11 @@
 .section-title {
   font-size: 1.3rem;
   font-weight: 600;
-  color: #333;
+  color: #1A8FC9;
   margin-top: 30px;
   margin-bottom: 15px;
   padding-left: 15px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid #F3B82B;
 }
 
 .transcript-preview {
@@ -74,7 +84,7 @@
 }
 
 .transcript-preview::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .transcript-preview::-webkit-scrollbar-track {
@@ -82,8 +92,8 @@
 }
 
 .transcript-preview::-webkit-scrollbar-thumb {
-  background: #667eea;
-  border-radius: 4px;
+  background: black;
+  border-radius: 2px;
 }
 
 .error-banner {
@@ -107,14 +117,15 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, #1A8FC9 0%, #0D5A8F 100%);
+  color: #F3B82B;
   width: 100%;
+  font-weight: 700;
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 10px 20px rgba(243, 184, 43, 0.4);
 }
 
 .btn-primary:disabled {
@@ -123,12 +134,14 @@
 }
 
 .btn-secondary {
-  background: #f0f0f0;
-  color: #333;
+  background: linear-gradient(135deg, #1A8FC9 0%, #0D5A8F 100%);
+  color: #F3B82B;
+  font-weight: 600;
 }
 
 .btn-secondary:hover {
-  background: #e0e0e0;
+  background: linear-gradient(135deg, #0D5A8F 0%, #1A8FC9 100%);
+  box-shadow: 0 5px 15px rgba(26, 143, 201, 0.3);
 }
 
 @keyframes fadeInDown {
