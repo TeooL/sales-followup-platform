@@ -1,0 +1,7 @@
+<< name: conversationFile, prompt: true, desc: "Upload the .txt file containing the conversation" >>
+{{ doc  | name: "<< name: conversationFile >>" }}=>{{ variable  | name: "conversationText" }}
+{{ LLM  | prompt: "You are tasked with analyzing a conversation to extract a detailed call summary, key discussion points, and any next steps or action items. Provide the output in a structured JSON format with keys: 'summary', 'keyPoints', and 'actionItems'.\n\nHere is the conversation text:\n<< name: conversationText, prompt: false >>" | cache: "true" }}=>{{ variable  | name: "callAnalysis" }}
+{{ seek  | query: "What are the next best steps for going forward with this call and handling any objections raised?" | stump: " << name: callAnalysis, prompt: false >>" }}=>{{ variable  | name: "seeker" }}
+{{ LLM  | prompt: "Based on the following call analysis, generate a personalized follow-up email written in a natural, human tone. The email should reflect the context and tone of the conversation and be ready to send.\n\nCall Analysis:\n<< name: seeker, prompt: false >>
+Append it to the end of this JSON: << name: callAnalysis, prompt: false >>" | cache: "true" }}
+{{ extractCode  }}
