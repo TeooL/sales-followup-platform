@@ -303,6 +303,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - [ ] Analytics dashboard
 - [ ] User authentication
 - [ ] Batch transcript processing
+- [ ] Automatic recording and uploading transcripts
 
 ## Acknowledgments
 
